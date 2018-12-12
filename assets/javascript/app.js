@@ -52,23 +52,24 @@ $("#addTrain").on("click", function (event) {
 })
 
 database.ref().on("child_added", function (snapshot) {
-    var sv = snapshot.val();
+    var snapshot = snapshot.val();
 
-    console.log(sv.name);
-    console.log(sv.destination);
-    console.log(sv.first);
-    console.log(sv.frequency);
+    var firstConverted = moment(snapshot.first, "HH:mm");
+    if (snapshot.first > moment().format("HH:mm")) {
+        var firstTrainMinutes = moment(firstConverted).diff(moment(),"minutes");
+        if(firstTrainMinutes >= 60) {
+            firstTrainMinutes = moment(firstConverted).fromNow(true);
+            
+            $("#trainData").append("<tr><td>" + snapshot.name + "</td><td>" + snapshot.destination + "</td><td>" + snapshot.frequency + "</td><td>" + snapshot.first + "</td><td>" + firstTrainMinutes + "</td></tr>");
+        } else {
+        $("#trainData").append("<tr><td>" + snapshot.name + "</td><td>" + snapshot.destination + "</td><td>" + snapshot.frequency + "</td><td>" + snapshot.first + "</td><td>" + firstTrainMinutes + "</td></tr>");
+        }
+    } else {
+        var timeDiff = moment().diff(moment(firstConverted), "minutes");
+        var remaining = timeDiff % snapshot.frequency;
+        var minutesLeft = snapshot.frequency - remaining;
+        var nextTrain = moment().add(minutesLeft, "minutes");
 
-    var firstConverted = moment(sv.first, "HH:mm").subtract(1, "years");
-    console.log(firstConverted);
-    var timeDiff = moment().diff(moment(firstConverted), "minutes");
-    console.log("difference: " + timeDiff)
-    var remaining = timeDiff % sv.frequency;
-    console.log(remaining);
-    var minutesLeft = sv.frequency - remaining;
-    console.log(minutesLeft)
-    var nextTrain = moment().add(minutesLeft, "minutes");
-    console.log(nextTrain);
-
-    $("#trainData").append("<tr><td>" + sv.name + "</td><td>" + sv.destination + "</td><td>" + sv.frequency + "</td><td>" + nextTrain.format("HH:mm") + "</td><td>" + minutesLeft + "</td></tr>");
+        $("#trainData").append("<tr><td>" + snapshot.name + "</td><td>" + snapshot.destination + "</td><td>" + snapshot.frequency + "</td><td>" + nextTrain.format("HH:mm") + "</td><td>" + minutesLeft + "</td></tr>");
+    }
 })
